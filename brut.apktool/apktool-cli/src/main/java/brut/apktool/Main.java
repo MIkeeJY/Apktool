@@ -220,6 +220,11 @@ public class Main {
             outFile = null;
         }
 
+//        sign option
+        if (cli.hasOption("si") || cli.hasOption("sign")) {
+            apkOptions.sign = true;
+        }
+
         // try and build apk
         new Androlib(apkOptions).build(new File(appDirName), outFile);
     }
@@ -326,6 +331,11 @@ public class Main {
                 .withDescription("Skip changes detection and build all files.")
                 .create("f");
 
+//        sign
+        Option signBuiOption = OptionBuilder.withLongOpt("sign")
+                .withDescription("Sign this apk.")
+                .create("si");
+
         Option aaptOption = OptionBuilder.withLongOpt("aapt")
                 .hasArg(true)
                 .withArgName("loc")
@@ -389,6 +399,7 @@ public class Main {
         BuildOptions.addOption(outputBuiOption);
         BuildOptions.addOption(frameDirOption);
         BuildOptions.addOption(forceBuiOption);
+        BuildOptions.addOption(signBuiOption);
 
         // add basic framework options
         frameOptions.addOption(tagOption);
@@ -451,6 +462,7 @@ public class Main {
         formatter.printHelp("apktool " + verbosityHelp() + "if|install-framework [options] <framework.apk>", frameOptions);
         formatter.printHelp("apktool " + verbosityHelp() + "d[ecode] [options] <file_apk>", DecodeOptions);
         formatter.printHelp("apktool " + verbosityHelp() + "b[uild] [options] <app_path>", BuildOptions);
+
         if (isAdvanceMode()) {
             formatter.printHelp("apktool " + verbosityHelp() + "publicize-resources <file_path>",
                     "Make all framework resources public.", emptyOptions, null);

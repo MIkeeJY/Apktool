@@ -30,4 +30,8 @@ public class ApkOptions {
     public String frameworkFolderLocation = null;
     public String frameworkTag = null;
     public String aaptPath = "";
+
+    //sign
+    public boolean sign = false;
+    public String signConfigFilePath = "sign.conf";
 }
