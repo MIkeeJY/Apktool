@@ -315,11 +315,6 @@ public class Androlib {
         buildCopyOriginalFiles(appDir);
         buildApk(appDir, outFile);
 
-        //process sign apk
-        if (apkOptions.sign) {
-            signApk(outFile,signOutFile);
-        }
-
         // we must go after the Apk is built, and copy the files in via Zip
         // this is because Aapt won't add files it doesn't know (ex unknown files)
         buildUnknownFiles(appDir, outFile, meta);
@@ -335,7 +330,24 @@ public class Androlib {
                 throw new AndrolibException(ex.getMessage());
             }
         }
+
+        //process sign apk
+        if (apkOptions.sign) {
+            signApk(outFile,signOutFile);
+        }
+
+        //install apk
+        if (apkOptions.install) {
+            LOGGER.info("Install apk file...");
+            installApk(signOutFile, false);
+        } else {
+            if (apkOptions.reinstall) {
+                LOGGER.info("Reinstall apk file...");
+                installApk(signOutFile, true);
+            }
+        }
     }
+
 
 
 
@@ -715,6 +727,22 @@ public class Androlib {
             throw new AndrolibException(e);
         }
 
+    }
+
+    private void installApk(File signOutFile, boolean isReinstall) throws AndrolibException {
+        ArrayList<String> strings = new ArrayList<>();
+        strings.add("adb");
+        strings.add("install");
+        if (isReinstall) {
+            strings.add("-r");
+        }
+        strings.add(signOutFile.getAbsolutePath());
+        try {
+            OS.exec(strings.toArray(new String[0]));
+        } catch (BrutException e) {
+            e.printStackTrace();
+            throw new AndrolibException(e);
+        }
     }
 
     public void publicizeResources(File arscFile) throws AndrolibException {

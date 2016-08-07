@@ -34,4 +34,9 @@ public class ApkOptions {
     //sign
     public boolean sign = false;
     public String signConfigFilePath = "sign.conf";
+
+
+    //auto install
+    public boolean install = false;
+    public boolean reinstall = false;
 }
