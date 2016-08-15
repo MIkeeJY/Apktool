@@ -1,17 +1,17 @@
 /**
- *  Copyright 2014 Ryszard Wiśniewski <brut.alll@gmail.com>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Copyright 2014 Ryszard Wiśniewski <brut.alll@gmail.com>
+ * <p>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package brut.apktool;
@@ -220,6 +220,19 @@ public class Main {
             outFile = null;
         }
 
+//        sign option
+        if (cli.hasOption("si") || cli.hasOption("sign")) {
+            apkOptions.sign = true;
+        }
+
+//        install
+        if (cli.hasOption("i") || cli.hasOption("install")) {
+            apkOptions.install = true;
+        }
+        if (cli.hasOption("ri") || cli.hasOption("reinstall")) {
+            apkOptions.reinstall = true;
+        }
+
         // try and build apk
         new Androlib(apkOptions).build(new File(appDirName), outFile);
     }
@@ -326,6 +339,19 @@ public class Main {
                 .withDescription("Skip changes detection and build all files.")
                 .create("f");
 
+//        sign
+        Option signBuiOption = OptionBuilder.withLongOpt("sign")
+                .withDescription("Sign this apk.")
+                .create("si");
+
+        Option installBuiOption = OptionBuilder.withLongOpt("install")
+                .withDescription("Install this apk.")
+                .create("i");
+
+        Option reInstallBuiOption = OptionBuilder.withLongOpt("reinstall")
+                .withDescription("Reinstall this apk.")
+                .create("ri");
+
         Option aaptOption = OptionBuilder.withLongOpt("aapt")
                 .hasArg(true)
                 .withArgName("loc")
@@ -389,6 +415,9 @@ public class Main {
         BuildOptions.addOption(outputBuiOption);
         BuildOptions.addOption(frameDirOption);
         BuildOptions.addOption(forceBuiOption);
+        BuildOptions.addOption(signBuiOption);
+        BuildOptions.addOption(installBuiOption);
+        BuildOptions.addOption(reInstallBuiOption);
 
         // add basic framework options
         frameOptions.addOption(tagOption);
@@ -396,16 +425,16 @@ public class Main {
 
         // add all, loop existing cats then manually add advance
         for (Object op : normalOptions.getOptions()) {
-            allOptions.addOption((Option)op);
+            allOptions.addOption((Option) op);
         }
         for (Object op : DecodeOptions.getOptions()) {
-            allOptions.addOption((Option)op);
+            allOptions.addOption((Option) op);
         }
         for (Object op : BuildOptions.getOptions()) {
-            allOptions.addOption((Option)op);
+            allOptions.addOption((Option) op);
         }
         for (Object op : frameOptions.getOptions()) {
-            allOptions.addOption((Option)op);
+            allOptions.addOption((Option) op);
         }
         allOptions.addOption(analysisOption);
         allOptions.addOption(debugDecOption);
@@ -439,10 +468,10 @@ public class Main {
                         "with smali v" + ApktoolProperties.get("smaliVersion") +
                         " and baksmali v" + ApktoolProperties.get("baksmaliVersion") + "\n" +
                         "Copyright 2014 Ryszard Wiśniewski <brut.alll@gmail.com>\n" +
-                        "Updated by Connor Tumbleson <connor.tumbleson@gmail.com>" );
+                        "Updated by Connor Tumbleson <connor.tumbleson@gmail.com>");
         if (isAdvanceMode()) {
             System.out.println("Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)\n");
-        }else {
+        } else {
             System.out.println("");
         }
 
@@ -451,6 +480,7 @@ public class Main {
         formatter.printHelp("apktool " + verbosityHelp() + "if|install-framework [options] <framework.apk>", frameOptions);
         formatter.printHelp("apktool " + verbosityHelp() + "d[ecode] [options] <file_apk>", DecodeOptions);
         formatter.printHelp("apktool " + verbosityHelp() + "b[uild] [options] <app_path>", BuildOptions);
+
         if (isAdvanceMode()) {
             formatter.printHelp("apktool " + verbosityHelp() + "publicize-resources <file_path>",
                     "Make all framework resources public.", emptyOptions, null);
@@ -475,7 +505,7 @@ public class Main {
             return;
         }
 
-        Handler handler = new Handler(){
+        Handler handler = new Handler() {
             @Override
             public void publish(LogRecord record) {
                 if (getFormatter() == null) {
@@ -493,10 +523,14 @@ public class Main {
                     reportError(null, exception, ErrorManager.FORMAT_FAILURE);
                 }
             }
+
             @Override
-            public void close() throws SecurityException {}
+            public void close() throws SecurityException {
+            }
+
             @Override
-            public void flush(){}
+            public void flush() {
+            }
         };
 
         logger.addHandler(handler);

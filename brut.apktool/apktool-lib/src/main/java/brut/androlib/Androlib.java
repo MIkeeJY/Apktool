@@ -31,7 +31,6 @@ import brut.directory.*;
 import brut.util.BrutIO;
 import brut.util.OS;
 import java.io.*;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -278,10 +277,17 @@ public class Androlib {
         mAndRes.setVersionInfo(meta.versionInfo);
         mAndRes.setSharedLibrary(meta.sharedLibrary);
 
+        String outFileName = meta.apkFileName;
         if (outFile == null) {
-            String outFileName = meta.apkFileName;
             outFile = new File(appDir, "dist" + File.separator + (outFileName == null ? "out.apk" : outFileName));
         }
+
+        //sign out file
+        if (outFileName != null) {
+            int lastIndexOf = outFileName.lastIndexOf(".");
+            outFileName = outFileName.substring(0,lastIndexOf).concat("-sign.apk");
+        }
+        File signOutFile = new File(appDir, "dist" + File.separator + (outFileName == null ? "out-sign.apk" : outFileName));
 
         new File(appDir, APK_DIRNAME).mkdirs();
         buildSources(appDir);
@@ -324,7 +330,26 @@ public class Androlib {
                 throw new AndrolibException(ex.getMessage());
             }
         }
+
+        //process sign apk
+        if (apkOptions.sign) {
+            signApk(outFile,signOutFile);
+        }
+
+        //install apk
+        if (apkOptions.install) {
+            LOGGER.info("Install apk file...");
+            installApk(signOutFile, false);
+        } else {
+            if (apkOptions.reinstall) {
+                LOGGER.info("Reinstall apk file...");
+                installApk(signOutFile, true);
+            }
+        }
     }
+
+
+
 
     public void buildSources(File appDir)
             throws AndrolibException {
@@ -668,6 +693,56 @@ public class Androlib {
             assetDir = null;
         }
         mAndRes.aaptPackage(outApk, null, null, new File(appDir, APK_DIRNAME), assetDir, null);
+    }
+
+    private void signApk(File outFile, File signOutFile) throws AndrolibException {
+        LOGGER.info("Signing apk file...");
+        File file = new File(apkOptions.signConfigFilePath);
+        if (!file.exists()) {
+            LOGGER.info("sign.conf file not found...");
+            return;
+        }
+        try {
+            List<String> strings = FileUtils.readLines(file);
+            if (strings.size() >= 1) {
+
+                String cmd = strings.get(0);
+//                String args = strings.get(1);
+                if (cmd.contains("signapk.jar")) {
+                    //使用signapk.jar,如:java -jar signapk.jar platform.x509.pem platform.pk8 MyDemo.apk MyDemo_signed.apk
+                } else {
+                    //使用jarsigner,如:jarsigner -verbose -keystore abc.keystore [-storepass feelyou.info] -signedjar 123x.apk 123.apk hi
+                    cmd = String.format(cmd,signOutFile.getAbsolutePath(),outFile.getAbsolutePath());
+
+                    String[] command = cmd.split(" ");
+                    OS.exec(command);
+
+                    LOGGER.info("Signing apk file success...");
+                }
+            } else {
+                LOGGER.info("sign.conf file can not empty...");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new AndrolibException(e);
+        }
+
+    }
+
+    private void installApk(File signOutFile, boolean isReinstall) throws AndrolibException {
+        ArrayList<String> strings = new ArrayList<>();
+        strings.add("adb");
+        strings.add("install");
+        if (isReinstall) {
+            strings.add("-r");
+        }
+        strings.add(signOutFile.getAbsolutePath());
+        try {
+            OS.exec(strings.toArray(new String[0]));
+        } catch (BrutException e) {
+            e.printStackTrace();
+            throw new AndrolibException(e);
+        }
     }
 
     public void publicizeResources(File arscFile) throws AndrolibException {
